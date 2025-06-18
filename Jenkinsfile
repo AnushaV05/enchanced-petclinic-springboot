@@ -21,7 +21,7 @@ pipeline {
     stages {
         stage('Checkout From Git') {
             steps {
-                git branch: 'prod', url: 'https://github.com/bkrrajmali/enahanced-petclinc-springboot.git'
+                git branch: 'prod', url: 'https://github.com/AnushaV05/enchanced-petclinic-springboot.git'
             }
         }
 
@@ -54,9 +54,9 @@ pipeline {
                 withSonarQubeEnv('sonarserver') {
                     sh '''
                         $SCANNER_HOME/bin/sonar-scanner \
-                        -Dsonar.organization=bkrrajmali \
-                        -Dsonar.projectName=SpringBootPet \
-                        -Dsonar.projectKey=bkrrajmali_springbootpet \
+                        -Dsonar.organization=AnushaV05 \
+                        -Dsonar.projectName=springbootPet \
+                        -Dsonar.projectKey=anushav05_springbootpet \
                         -Dsonar.java.binaries=. \
                         -Dsonar.exclusions=**/trivy-fs-output.txt
                     '''
