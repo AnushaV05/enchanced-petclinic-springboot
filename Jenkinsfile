@@ -126,7 +126,12 @@ pipeline {
                 }
             }
         }
-
+        stage('Docker Build & Push') {
+    steps {
+        sh 'docker build -t youracr.azurecr.io/app:tag .'
+        sh 'docker push youracr.azurecr.io/app:tag'
+    }
+}
         stage('Azure Login to Kubernetes') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'azure-acr-sp', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
