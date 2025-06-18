@@ -21,7 +21,8 @@ pipeline {
     stages {
         stage('Trivy Scan') {
     steps {
-        sh 'trivy image your-image-name'
+        sh 'trivy image openjdk:17-jdk-slim'
+
     }
 }
         stage('Checkout From Git') {
