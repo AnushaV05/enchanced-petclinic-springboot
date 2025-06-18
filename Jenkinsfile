@@ -87,7 +87,14 @@ pipeline {
                 }
             }
         }
-
+        stage('SonarCloud Analysis') {
+           steps {
+               withSonarQubeEnv('SonarCloud') {
+                   sh 'mvn sonar:sonar -Dsonar.projectKey=your_project_key -Dsonar.organization=your_org'
+             }
+        }
+    }
+  
         stage('Azure Login to ACR') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'azure-acr-sp', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
