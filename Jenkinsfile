@@ -155,6 +155,12 @@ pipeline {
                         """
                     }
                 }
+                stage('Trivy Scan') {
+    steps {
+        sh 'trivy image your-image-name'
+    }
+}
+
             }
         }
     }
