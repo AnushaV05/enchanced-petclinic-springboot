@@ -19,12 +19,6 @@ pipeline {
     }
 
     stages {
-        stage('Trivy Scan') {
-    steps {
-        sh 'trivy image openjdk:17-jdk-slim'
-
-    }
-}
         stage('Checkout From Git') {
             steps {
                 git branch: 'prod', url: 'https://github.com/bkrrajmali/enahanced-petclinc-springboot.git'
@@ -107,6 +101,12 @@ pipeline {
                 }
             }
         }
+        stage('Trivy Scan') {
+    steps {
+        sh 'trivy image openjdk:17-jdk-slim'
+
+    }
+}
 
         stage('Docker Push to ACR') {
             steps {
