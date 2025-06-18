@@ -19,6 +19,11 @@ pipeline {
     }
 
     stages {
+        stage('Trivy Scan') {
+    steps {
+        sh 'trivy image your-image-name'
+    }
+}
         stage('Checkout From Git') {
             steps {
                 git branch: 'prod', url: 'https://github.com/bkrrajmali/enahanced-petclinc-springboot.git'
@@ -155,11 +160,6 @@ pipeline {
                         """
                     }
                 }
-                stage('Trivy Scan') {
-    steps {
-        sh 'trivy image your-image-name'
-    }
-}
 
             }
         }
