@@ -46,31 +46,7 @@ pipeline {
             }
         }
 
-        stage('Sonar Analysis') {
-            environment {
-                SCANNER_HOME = tool 'Sonar-Scanner'
-            }
-            steps {
-                withSonarQubeEnv('sonarserver') {
-                    sh '''
-                        $SCANNER_HOME/bin/sonar-scanner \
-                        -Dsonar.organization=anushaV05 \
-                        -Dsonar.projectName=springbootPet \
-                        -Dsonar.projectKey=anushav05_springbootpet \
-                        -Dsonar.java.binaries=. \
-                        -Dsonar.exclusions=**/trivy-fs-output.txt
-                    '''
-                }
-            }
-        }
-
-        stage('Sonar Quality Gate') {
-            steps {
-                timeout(time: 1, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true, credentialsId: 'sonar'
-                }
-            }
-        }
+       
 
         stage('Maven Package') {
             steps {
@@ -87,13 +63,7 @@ pipeline {
                 }
             }
         }
-        stage('SonarCloud Analysis') {
-           steps {
-               withSonarQubeEnv('SonarCloud') {
-                   sh 'mvn sonar:sonar -Dsonar.projectKey=your_project_key -Dsonar.organization=your_org'
-             }
-        }
-    }
+
   
         stage('Azure Login to ACR') {
             steps {
