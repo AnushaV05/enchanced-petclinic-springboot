@@ -72,7 +72,7 @@ pipeline {
         ACR_NAME = 'jeevanacr20250619'
     }
     steps {
-        withCredentials([usernamePassword(credentialsId: 'azure-acr-sp', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
+        withCredentials([usernamePassword(credentialsId: 'sonar', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
             script {
                 echo "Azure Login Started"
                 sh '''
