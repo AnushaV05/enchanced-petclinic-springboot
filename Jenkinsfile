@@ -78,8 +78,16 @@ pipeline {
         }
 
         stage('Trivy Image Scan') {
-            steps {
-                sh "trivy image ${IMAGE_NAME}:${IMAGE_TAG}"
+  steps {
+    sh '''
+      export TRIVY_CACHE_DIR=/tmp/trivy-cache
+      mkdir -p $TRIVY_CACHE_DIR
+      trivy image --cache-dir $TRIVY_CACHE_DIR --format table --output trivy-report.txt --severity HIGH,CRITICAL springbootapp:35
+    '''
+  }
+}
+
+
             }
         }
 
