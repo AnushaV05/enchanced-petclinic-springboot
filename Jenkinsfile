@@ -153,7 +153,11 @@ pipeline {
                     echo "Checking deployment status..."
                     kubectl rollout status deployment/${K8S_DEPLOYMENT} -n ${K8S_NAMESPACE}
                 '''
+            
+                }
+
             }
         }
     }
+}
 
