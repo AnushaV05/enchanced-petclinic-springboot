@@ -58,32 +58,36 @@ pipeline {
                 script {
                     echo "Docker Build Started"
                     sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+
                 }
             }
         }
 
         stage('Azure Login to ACR') {
-    environment {
-        TENANT_ID = 'ed56eaf4-7b02-4642-a7a8-f3e7a7b78ef7'
-        ACR_NAME = 'jeevanacr20250619'
-    }
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'sonar', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
-            script {
-                echo "Azure Login Started"
-                sh '''
-                    az login --service-principal -u $AZURE_USERNAME -p $AZURE_PASSWORD --tenant $TENANT_ID
-                    az acr login --name $ACR_NAME
-                '''
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'azure-acr-sp', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
+                    script {
+                        echo "Azure Login Started"
+                        sh '''
+                            az login --service-principal -u $AZURE_USERNAME -p $AZURE_PASSWORD --tenant $TENANT_ID
+                            az acr login --name $ACR_NAME
+                        '''
+                    }
+                }
             }
         }
-    }
+
+        stage('Trivy Image Scan') {
+  steps {
+    sh '''
+      export TRIVY_CACHE_DIR=/tmp/trivy-cache
+      mkdir -p $TRIVY_CACHE_DIR
+      trivy image --cache-dir $TRIVY_CACHE_DIR --format table --output trivy-report.txt --severity HIGH,CRITICAL springbootapp:35
+    '''
+  }
 }
 
 
-        stage('Trivy Scan') {
-            steps {
-                sh 'trivy image openjdk:17-jdk-slim'
             }
         }
 
@@ -96,13 +100,6 @@ pipeline {
                         docker push ${FULL_IMAGE_NAME}
                     '''
                 }
-            }
-        }
-
-        stage('Docker Build & Push') {
-            steps {
-                sh 'docker build -t youracr.azurecr.io/app:tag .'
-                sh 'docker push youracr.azurecr.io/app:tag'
             }
         }
 
@@ -136,7 +133,7 @@ pipeline {
                         echo "Deployment exists. Performing rolling update with new image: ${BUILD_NUMBER}"
                         sh """
                             kubectl set image deployment/${K8S_DEPLOYMENT} \
-                            ${K8S_DEPLOYMENT}=${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${BUILD_NUMBER} \
+                            ${K8S_DEPLOYMENT}=${FULL_IMAGE_NAME} \
                             -n $K8S_NAMESPACE
                         """
                     } else {
@@ -149,5 +146,15 @@ pipeline {
                 }
             }
         }
-    }
+
+        stage('Check Deployment') {
+            steps {
+                sh '''
+                    echo "Checking deployment status..."
+                    kubectl rollout status deployment/${K8S_DEPLOYMENT} -n ${K8S_NAMESPACE}
+                '''
+            
+                }
+        }
+}
 }
