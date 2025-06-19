@@ -82,11 +82,14 @@ pipeline {
             sh '''
                 export TRIVY_CACHE_DIR=$WORKSPACE/.trivy-cache
                 mkdir -p $TRIVY_CACHE_DIR
-                trivy image --cache-dir $TRIVY_CACHE_DIR --format table --output trivy-report.txt --severity HIGH,CRITICAL ${IMAGE_NAME}:${IMAGE_TAG}
+                trivy image --scanners vuln --cache-dir $TRIVY_CACHE_DIR \
+                --format table --output trivy-report.txt \
+                --severity HIGH,CRITICAL ${IMAGE_NAME}:${IMAGE_TAG}
             '''
         }
     }
 }
+
         stage('Docker Push to ACR') {
             steps {
                 script {
