@@ -81,4 +81,73 @@ pipeline {
                 sh '''
                     export TRIVY_CACHE_DIR=/tmp/trivy-cache
                     mkdir -p $TRIVY_CACHE_DIR
-                    trivy image --cache-dir $TRIV
+                    trivy image --cache-dir $TRIVY_CACHE_DIR --format table --output trivy-report.txt --severity HIGH,CRITICAL ${IMAGE_NAME}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+        stage('Docker Push to ACR') {
+            steps {
+                script {
+                    echo "Docker Push Started"
+                    sh '''
+                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${FULL_IMAGE_NAME}
+                        docker push ${FULL_IMAGE_NAME}
+                    '''
+                }
+            }
+        }
+
+        stage('Azure Login to Kubernetes') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'azure-acr-sp', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
+                    script {
+                        echo "Azure Login to Kubernetes Started"
+                        sh '''
+                            az login --service-principal -u $AZURE_USERNAME -p $AZURE_PASSWORD --tenant $TENANT_ID
+                            az aks get-credentials --resource-group $RESOURCE_GROUP --name $AKS_CLUSTER --overwrite-existing
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Kubernetes Deployment') {
+            steps {
+                script {
+                    echo "Kubernetes Deployment Stage Started"
+                    def output = sh(
+                        script: "kubectl get deployment ${K8S_DEPLOYMENT} -n $K8S_NAMESPACE --ignore-not-found",
+                        returnStdout: true
+                    ).trim()
+
+                    def deploymentExists = output != ""
+
+                    if (deploymentExists) {
+                        echo "Deployment exists. Performing rolling update with new image: ${BUILD_NUMBER}"
+                        sh """
+                            kubectl set image deployment/${K8S_DEPLOYMENT} \
+                            ${K8S_DEPLOYMENT}=${FULL_IMAGE_NAME} \
+                            -n $K8S_NAMESPACE
+                        """
+                    } else {
+                        echo "Deployment not found. Creating new deployment from template"
+                        sh """
+                            sed "s/__IMAGE_TAG__/${BUILD_NUMBER}/" k8s/sprinboot-deployment.yaml > k8s/tmp-deployment.yaml
+                            kubectl apply -f k8s/tmp-deployment.yaml -n $K8S_NAMESPACE
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Check Deployment') {
+            steps {
+                sh '''
+                    echo "Checking deployment status..."
+                    kubectl rollout status deployment/${K8S_DEPLOYMENT} -n ${K8S_NAMESPACE}
+                '''
+            }
+        }
+    }
+}
