@@ -67,18 +67,22 @@ pipeline {
 
   
         stage('Azure Login to ACR') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'azure-acr-sp', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
-                    script {
-                        echo "Azure Login Started"
-                        sh '''
-                            az login --service-principal -u $AZURE_USERNAME -p $AZURE_PASSWORD --tenant $TENANT_ID
-                            az acr login --name $ACR_NAME
-                        '''
-                    }
-                }
+    environment {
+        TENANT_ID = 'ed56eaf4-7b02-4642-a7a8-f3e7a7b78ef7'
+        ACR_NAME = 'jeevanacr20250619'
+    }
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'azure-acr-sp', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
+            script {
+                echo "Azure Login Started"
+                sh '''
+                    az login --service-principal -u $AZURE_USERNAME -p $AZURE_PASSWORD --tenant $TENANT_ID
+                    az acr login --name $ACR_NAME
+                '''
             }
         }
+    }
+}
         stage('Trivy Scan') {
     steps {
         sh 'trivy image openjdk:17-jdk-slim'
