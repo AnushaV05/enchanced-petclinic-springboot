@@ -62,32 +62,37 @@ pipeline {
             }
         }
 
-        stage('Azure Login to ACR') {
+        stage('Trivy Scan (First Time Setup)') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'azure-acr-sp', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
-                    script {
-                        echo "Azure Login Started"
-                        sh '''
-                            az login --service-principal -u $AZURE_USERNAME -p $AZURE_PASSWORD --tenant $TENANT_ID
-                            az acr login --name $ACR_NAME
-                        '''
-                    }
+                sh '''
+                    mkdir -p $TRIVY_CACHE_DIR
+                    trivy image \
+                      --scanners vuln \
+                      --cache-dir $TRIVY_CACHE_DIR \
+                      --format table \
+                      --output trivy-report.txt \
+                      --severity HIGH,CRITICAL \
+                      ${IMAGE_NAME}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+        stage('Display Trivy Report') {
+            steps {
+                script {
+                    def report = readFile('trivy-report.txt')
+                    echo "\n=== TRIVY REPORT ===\n" + report
                 }
             }
         }
-  sh """
-  export TRIVY_CACHE_DIR=\$WORKSPACE/.trivy-cache
-  mkdir -p \$TRIVY_CACHE_DIR
-  trivy image \
-    --scanners vuln \
-    --skip-db-update \
-    --cache-dir \$TRIVY_CACHE_DIR \
-    --format table \
-    --output trivy-report.txt \
-    --severity HIGH,CRITICAL \
-    ${IMAGE_NAME}:${IMAGE_TAG}
-"""
+    }
 
+    post {
+        always {
+            archiveArtifacts artifacts: 'trivy-report.txt', fingerprint: true
+        }
+    }
+}
         stage('Docker Push to ACR') {
             steps {
                 script {
