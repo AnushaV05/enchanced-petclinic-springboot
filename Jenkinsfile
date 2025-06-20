@@ -41,7 +41,7 @@ pipeline {
 
         stage('File System Scan By Trivy') {
             steps {
-                echo "Trivy Scan Started"
+                echo "Trivy Scanning"
                 sh 'trivy fs --format table --output trivy-report.txt --severity HIGH,CRITICAL .'
             }
         }
@@ -62,38 +62,7 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan (First Time Setup)') {
-            steps {
-                sh '''
-                    mkdir -p $TRIVY_CACHE_DIR
-                    trivy image \
-                      --scanners vuln \
-                      --cache-dir $TRIVY_CACHE_DIR \
-                      --format table \
-                      --output trivy-report.txt \
-                      --severity HIGH,CRITICAL \
-                      ${IMAGE_NAME}:${IMAGE_TAG}
-                '''
-            }
-        }
-
-        stage('Display Trivy Report') {
-            steps {
-                script {
-                    def report = readFile('trivy-report.txt')
-                    echo "\n=== TRIVY REPORT ===\n" + report
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            archiveArtifacts artifacts: 'trivy-report.txt', fingerprint: true
-        }
-    }
-}
-        stage('Docker Push to ACR') {
+         stage('Docker Push to ACR') {
             steps {
                 script {
                     echo "Docker Push Started"
