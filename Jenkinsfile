@@ -84,7 +84,8 @@ pipeline {
                 mkdir -p $TRIVY_CACHE_DIR
                 trivy image \
                     --scanners vuln \
-                    --skip-java-db \
+                    --skip-db-update \
+                    --skip-java-db-update \
                     --cache-dir $TRIVY_CACHE_DIR \
                     --format table \
                     --output trivy-report.txt \
@@ -93,6 +94,7 @@ pipeline {
         }
     }
 }
+
 
 
         stage('Docker Push to ACR') {
