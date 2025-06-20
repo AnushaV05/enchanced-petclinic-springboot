@@ -75,26 +75,24 @@ pipeline {
                 }
             }
         }
-
-       sh '''
-  export TRIVY_CACHE_DIR=$WORKSPACE/.trivy-cache
-  mkdir -p $TRIVY_CACHE_DIR
-  trivy image \
-    --scanners vuln \
-    --skip-db-update \
-    --cache-dir $TRIVY_CACHE_DIR \
-    --format table \
-    --output trivy-report.txt \
-    --severity HIGH,CRITICAL \
-    ${IMAGE_NAME}:${IMAGE_TAG}
-'''
-
+      stage('Trivy Image Scan') {
+    steps {
+        script {
+            sh '''
+                export TRIVY_CACHE_DIR=$WORKSPACE/.trivy-cache
+                mkdir -p $TRIVY_CACHE_DIR
+                trivy image \
+                    --scanners vuln \
+                    --skip-db-update \
+                    --skip-java-db-update \
+                    --cache-dir $TRIVY_CACHE_DIR \
+                    --format table \
+                    --output trivy-report.txt \
+                    --severity HIGH,CRITICAL ${IMAGE_NAME}:${IMAGE_TAG}
             '''
         }
     }
 }
-
-
 
         stage('Docker Push to ACR') {
             steps {
